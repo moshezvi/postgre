@@ -1,10 +1,22 @@
 -- setup.sql
+-- create the artifactory db if it does not exist
+DO
+$$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_database WHERE datname = 'artifactory'
+   ) THEN
+      CREATE DATABASE artifactory;
+   END IF;
+END
+$$;
 
 \connect artifactory
 
 -- Create a temporary table to store the password
 CREATE TEMP TABLE temp_vars (pwd TEXT);
 -- Insert the password value
+\echo The value of art pas is :artifactory_password
 INSERT INTO temp_vars VALUES (:artifactory_password);
 
 -- Create the Artifactory user (if not exists check is done manually since CREATE USER IF NOT EXISTS is not supported)

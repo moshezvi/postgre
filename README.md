@@ -20,6 +20,6 @@ psql -h $PGHOST -U $PGUSER -d postgres -f setup.sql
 
 5. You can pass variables to the sql script by using the `-v` flag:
 ```
-export ARTIFACTORY_PASSWORD=
-psql -h $PGHOST -U $PGUSER -d postgres -v artifactory_password=$ARTIFACTORY_PASSWORD -f setup.sql
+export ARTIFACTORY_PASSWORD='Admin!123' # make sure to single quote
+psql -h $PGHOST -U $PGUSER -f setup.sql -v artifactory_password="'$ARTIFACTORY_PASSWORD'" -d postgres
 ```
