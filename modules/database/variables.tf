@@ -31,4 +31,14 @@ variable "db_allocated_storage" {
   default     = 20
 }
 
+# VPC variables
+# These variables are used to create the VPC and subnets for the database
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID"
+}
 
+variable "db_subnet_ids" {
+  type        = list(string)
+  description = "List of subnet IDs for the DB subnet group"
+}
