@@ -29,11 +29,19 @@ psql -h localhost -p 5433 -U $PGUSER -d postgres
 
 4. To run a script, e.g., to create the artifactory db:
 ```
-psql -h $PGHOST -U $PGUSER -d postgres -f setup.sql
+psql -h $PGHOST -U $PGUSER -d postgres -f setup_artifactory.sql
 ```
 
 5. You can pass variables to the sql script by using the `-v` flag:
 ```
 export ARTIFACTORY_PASSWORD='Admin!123' # make sure to single quote
 psql -h $PGHOST -U $PGUSER -f setup.sql -v artifactory_password="'$ARTIFACTORY_PASSWORD'" -d postgres
+```
+
+## Setting up Artifactory
+1. Run `setup_artifactory.sql` with a password:
+```
+export ARTIFACTORY_PASSWORD='some_password' # make sure to single quote
+psql -h localhost -p 5433 -U $PGUSER -d postgres -f setup_artifactory.sql -v password="'$ARTIFACTORY_PASSWORD'" 
+
 ```
