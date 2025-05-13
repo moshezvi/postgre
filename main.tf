@@ -17,3 +17,13 @@ module database {
   db_subnet_ids = module.vpc.private_subnet_ids
   vpc_id = module.vpc.vpc_id
 } 
+
+module bastion {
+  source = "./modules/bastion"
+  vpc_id = module.vpc.vpc_id
+  subnet_id = module.vpc.public_subnet_id
+  ami_id = "ami-04f167a56786e4b09" 
+  instance_type = "t3.micro"
+  key_name = "mozvi_key"
+  my_ip = "216.71.192.93/32" # Replace with your public IP address in CIDR notation
+}

@@ -16,16 +16,20 @@ resource "aws_security_group" "bastion_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "bastion_sg"
+  }
 }
 
-resource "aws_instance" "bastion" {
+resource "aws_instance" "postgres_bastion" {
   ami             = var.ami_id
   instance_type   = var.instance_type
   key_name        = var.key_name
   subnet_id       = var.subnet_id
-  security_groups = [aws_security_group.bastion_sg.name]
+  security_groups = [aws_security_group.bastion_sg.id]
 
   tags = {
-    Name = "bastion-host"
+    Name = "postgres_bastion"
   }
 }
