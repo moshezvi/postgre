@@ -8,12 +8,13 @@ module vpc {
 
 module database {
   source = "./modules/database"
-  db_identifier = "artifactory-pg-12"
-  db_engine_version = "12"
+  db_identifier = "pg-13"
+  db_engine_version = "13"
+  multi_az = true
   db_password = var.db_password
   db_username = var.db_username
-  db_allocated_storage = 20
-  db_instance_class = "db.t3.micro"
+  db_allocated_storage = 400
+  db_instance_class = "db.m5d.large"
   db_subnet_ids = module.vpc.private_subnet_ids
   vpc_id = module.vpc.vpc_id
 } 

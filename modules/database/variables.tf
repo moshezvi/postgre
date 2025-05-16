@@ -22,14 +22,21 @@ variable "db_engine_version" {
 variable "db_instance_class" {
   type        = string
   description = "DB instance class"
-  default     = "db.t3.medium"
+  default     = "db.m5d.large"
 }
 
 variable "db_allocated_storage" {
   type        = number
   description = "Allocated storage for the DB"
-  default     = 20
+  default     = 400
 }
+
+variable "multi_az" {
+  type        = bool
+  description = "Enable Multi-AZ for the DB"
+  default     = false
+}
+
 
 # VPC variables
 # These variables are used to create the VPC and subnets for the database
