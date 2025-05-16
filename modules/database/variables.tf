@@ -49,3 +49,15 @@ variable "db_subnet_ids" {
   type        = list(string)
   description = "List of subnet IDs for the DB subnet group"
 }
+
+variable "publicly_accessible" {
+  type        = bool
+  description = "Whether the DB instance is publicly accessible"
+  default     = false
+}
+
+variable "allowed_cidrs" {
+  type        = list(string)
+  description = "List of CIDR blocks to allow access to the DB instance"
+}
+  

@@ -8,3 +8,8 @@ variable "db_password" {
   description = "Master password for the DB"
   sensitive   = true
 }
+
+variable "allowed_cidrs" {
+  type        = list(string)
+  description = "List of CIDR blocks allowed to access the DB"
+}

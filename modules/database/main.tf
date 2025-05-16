@@ -1,10 +1,10 @@
-resource "aws_db_subnet_group" "db_subnet_group" {
-  name       = "postgres-subnet-group"
+resource "aws_db_subnet_group" "pg_subnet_group" {
+  name       = "pg-subnet-group"
   subnet_ids = var.db_subnet_ids  
 
-  description = "Subnet group for Postgres DB - Private"
+  description = "Subnet group for Postgres DB"
   tags = {
-    Name = "postgres-subnet-group"
+    Name = "pg-subnet-group"
   }
 }
 
@@ -17,7 +17,7 @@ resource "aws_security_group" "postgres_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"] # Update later with EKS node CIDRs
+    cidr_blocks = var.allowed_cidrs # Update later with EKS node CIDRs
   }
 
   egress {
@@ -43,9 +43,9 @@ resource "aws_db_instance" "postgres" {
   multi_az                = var.multi_az  # Enables standby instance
   username                = var.db_username
   password                = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.db_subnet_group.name
+  db_subnet_group_name    = aws_db_subnet_group.pg_subnet_group.name
   vpc_security_group_ids  = [aws_security_group.postgres_sg.id]
-  publicly_accessible     = false
+  publicly_accessible     = var.publicly_accessible
   skip_final_snapshot     = true
 
   tags = {

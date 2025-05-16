@@ -1,99 +1,135 @@
-resource "aws_vpc" "postgres_vpc" {
-  cidr_block           = "10.0.0.0/16"
+resource "aws_vpc" "pg_vpc" {
+  cidr_block           = var.vpc_cidr_block
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
-    Name = "postgres-vpc"
+    Name = "pg-vpc"
   }
 }
 
-resource "aws_subnet" "private_subnet_us_east_2a" {
-  vpc_id     = aws_vpc.postgres_vpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-2a"
+locals {
+  private_subnets = { for idx, az in var.availability_zones : idx => {
+    availability_zone = az
+    cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, idx)
+  }}
+
+  public_subnets = { for idx, az in var.availability_zones : idx => {
+    availability_zone = az
+    cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, idx + 100)
+  }}
+}
+
+# Private Subnets
+resource "aws_subnet" "pg_private_subnet" {
+  for_each = local.private_subnets
+
+  vpc_id            = aws_vpc.pg_vpc.id
+  cidr_block        = each.value.cidr_block
+  availability_zone = each.value.availability_zone
+
   tags = {
-    Name = "private-subnet-2a"
+    Name = "pg-private-subnet-${each.value.availability_zone}"
   }
 }
 
-resource "aws_subnet" "private_subnet_us_east_2b" {
-  vpc_id     = aws_vpc.postgres_vpc.id
-  cidr_block = "10.0.2.0/24"
-  availability_zone = "us-east-2b"
+resource "aws_route_table" "pg_private_rt" {
+  vpc_id = aws_vpc.pg_vpc.id
+
+  # No routes for private subnets
   tags = {
-    Name = "private-subnet-2b"
+    Name = "pg-private-route-table"
   }
 }
 
-resource "aws_subnet" "private_subnet_us_east_2c" {
-  vpc_id     = aws_vpc.postgres_vpc.id
-  cidr_block = "10.0.3.0/24"
-  availability_zone = "us-east-2c"
-  tags = {
-    Name = "private-subnet-2c"
-  }
+resource "aws_route_table_association" "private_subnets" {
+  for_each = aws_subnet.pg_private_subnet
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.pg_private_rt.id
 }
 
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.postgres_vpc.id
+# Public subnets
 
-  # No route to the IGW; this makes it "private"
-  tags = {
-    Name = "private-route-table"
-  }
-}
+resource "aws_subnet" "pg_public_subnet" {
+  for_each = local.public_subnets
 
-resource "aws_route_table_association" "subnet_2a" {
-  subnet_id      = aws_subnet.private_subnet_us_east_2a.id
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "subnet_2b" {
-  subnet_id      = aws_subnet.private_subnet_us_east_2b.id
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "subnet_2c" {
-  subnet_id      = aws_subnet.private_subnet_us_east_2c.id
-  route_table_id = aws_route_table.private.id
-}
-
-### Adding NAT Gateway for outbound internet access
-resource "aws_subnet" "bastion_subnet_1" {
-  vpc_id                  = aws_vpc.postgres_vpc.id
-  cidr_block              = "10.0.10.0/24"
-  availability_zone       = "us-east-2a"
+  vpc_id            = aws_vpc.pg_vpc.id
+  cidr_block        = each.value.cidr_block
+  availability_zone = each.value.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "bastion_subnet_1"
+    Name = "pg-public-subnet-${each.value.availability_zone}"
   }
 }
 
-resource "aws_internet_gateway" "bastion_igw" {
-  vpc_id = aws_vpc.postgres_vpc.id
+resource "aws_internet_gateway" "pg-igw" {
+  vpc_id = aws_vpc.pg_vpc.id
 
   tags = {
-    Name = "bastion-igw"
+    Name = "pg-public-igw"
   }
 }
 
-resource "aws_route_table" "bastion_rt" {
-  vpc_id = aws_vpc.postgres_vpc.id
-  # This route table is for the public subnet
+resource "aws_route_table" "pg_public_rt" {
+  vpc_id = aws_vpc.pg_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.bastion_igw.id
+    gateway_id = aws_internet_gateway.pg-igw.id
   }
 
   tags = {
-    Name = "public-route-table"
+    Name = "pg-public-route-table"
   }
 }
 
-resource "aws_route_table_association" "public_subnet_assoc" {
-  subnet_id      = aws_subnet.bastion_subnet_1.id
-  route_table_id = aws_route_table.bastion_rt.id
+resource "aws_route_table_association" "public_subnets" {
+  for_each = aws_subnet.pg_public_subnet
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.pg_public_rt.id
 }
+
+
+
+
+# ### Adding NAT Gateway for outbound internet access
+# resource "aws_subnet" "bastion_subnet_1" {
+#   vpc_id                  = aws_vpc.postgres_vpc.id
+#   cidr_block              = "10.0.10.0/24"
+#   availability_zone       = "us-east-2a"
+#   map_public_ip_on_launch = true
+
+#   tags = {
+#     Name = "bastion_subnet_1"
+#   }
+# }
+
+# resource "aws_internet_gateway" "bastion_igw" {
+#   vpc_id = aws_vpc.postgres_vpc.id
+
+#   tags = {
+#     Name = "bastion-igw"
+#   }
+# }
+
+# resource "aws_route_table" "bastion_rt" {
+#   vpc_id = aws_vpc.postgres_vpc.id
+#   # This route table is for the public subnet
+
+#   route {
+#     cidr_block = "0.0.0.0/0"
+#     gateway_id = aws_internet_gateway.bastion_igw.id
+#   }
+
+#   tags = {
+#     Name = "public-route-table"
+#   }
+# }
+
+# resource "aws_route_table_association" "public_subnet_assoc" {
+#   subnet_id      = aws_subnet.bastion_subnet_1.id
+#   route_table_id = aws_route_table.bastion_rt.id
+# }
