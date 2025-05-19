@@ -60,4 +60,27 @@ variable "allowed_cidrs" {
   type        = list(string)
   description = "List of CIDR blocks to allow access to the DB instance"
 }
-  
+
+variable "backup_retention_period" {
+  type        = number
+  description = "Number of days to retain backups"
+  default     = 7
+}
+
+variable "skip_final_snapshot" {
+  type        = bool
+  description = "Skip final snapshot before deletion"
+  default     = false
+} 
+
+variable "deletion_protection" {
+  type        = bool
+  description = "Enable deletion protection for the DB instance"
+  default     = false
+}
+
+variable "apply_immediately" {  #    = true  # Applies changes without waiting for maintenance window
+  type        = bool
+  description = "Apply changes immediately"
+  default     = false
+}

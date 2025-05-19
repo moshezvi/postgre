@@ -32,6 +32,28 @@ resource "aws_security_group" "postgres_sg" {
   }
 }
 
+#### TODO - Check this
+resource "aws_db_parameter_group" "pg_12_custom" {
+  name        = "pg-12-custom"
+  family      = "postgres12"  # Must match the correct version family
+  description = "Custom parameter group for PostgreSQL 12"
+  
+
+  parameter {
+    name  = "rds.logical_replication"
+    value = "1"
+    apply_method = "pending-reboot"
+  }
+
+  # parameter {
+  #   name  = "blue_green_deployment.enabled"
+  #   value = "true"
+  # }
+}
+######### TODO - Check this
+
+
+
 
 resource "aws_db_instance" "postgres" {
   identifier              = var.db_identifier
@@ -46,7 +68,12 @@ resource "aws_db_instance" "postgres" {
   db_subnet_group_name    = aws_db_subnet_group.pg_subnet_group.name
   vpc_security_group_ids  = [aws_security_group.postgres_sg.id]
   publicly_accessible     = var.publicly_accessible
-  skip_final_snapshot     = true
+  parameter_group_name    = aws_db_parameter_group.pg_12_custom.name
+  backup_retention_period = var.backup_retention_period
+  final_snapshot_identifier = "${var.db_identifier}-final-snapshot"
+  skip_final_snapshot     = var.skip_final_snapshot
+  deletion_protection     = var.deletion_protection
+  apply_immediately       = false
 
   tags = {
     Name = var.db_identifier

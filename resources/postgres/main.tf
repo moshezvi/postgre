@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 module vpc {
-  source = "./modules/vpc"
+  source = "../../modules/vpc"
 }
 
 locals {
@@ -11,7 +11,7 @@ locals {
 }
 
 module database {
-  source = "./modules/database"
+  source = "../../modules/database"
   db_identifier = "pg-12-tf"
   db_engine_version = "12.22-rds.20250220"
   multi_az = true
