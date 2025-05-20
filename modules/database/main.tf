@@ -44,16 +44,7 @@ resource "aws_db_parameter_group" "pg_12_custom" {
     value = "1"
     apply_method = "pending-reboot"
   }
-
-  # parameter {
-  #   name  = "blue_green_deployment.enabled"
-  #   value = "true"
-  # }
 }
-######### TODO - Check this
-
-
-
 
 resource "aws_db_instance" "postgres" {
   identifier              = var.db_identifier
@@ -73,7 +64,10 @@ resource "aws_db_instance" "postgres" {
   final_snapshot_identifier = "${var.db_identifier}-final-snapshot"
   skip_final_snapshot     = var.skip_final_snapshot
   deletion_protection     = var.deletion_protection
-  apply_immediately       = false
+  apply_immediately       = var.apply_immediately
+  blue_green_update {
+    enabled = true
+  }
 
   tags = {
     Name = var.db_identifier
