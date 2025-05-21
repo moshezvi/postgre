@@ -1,3 +1,12 @@
+terraform{
+  required_providers{
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  } 
+}
+
 provider "aws" {
   region = var.region
 }
@@ -12,7 +21,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.21.0"
 
-  name = "artifactory"
+  name = "${var.cluster_name}-vpc"
   cidr = var.vpc_cidr_block
 
   azs             = var.availability_zones
@@ -24,12 +33,14 @@ module "vpc" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "artifactory"
+    Name = "${var.cluster_name}-vpc"
   }
 }
 
 resource "aws_security_group" "cluster_remote_access" {
-  name        = "artifactory-remote-access"
+  count = var.enable_remote_access ? 1 : 0
+
+  name        = "${var.cluster_name}-ra"
   description = "Allow SSH access from my IP"
   vpc_id      = module.vpc.vpc_id
 
@@ -49,36 +60,16 @@ resource "aws_security_group" "cluster_remote_access" {
   }
 
   tags = {
-    Name = "artifactory-remote-access"
+    Name = "${var.cluster_name}-ra"
   }
-  
 }
-
-
-# resource "kubernetes_storage_class" "gp3_storage_class" {
-#   metadata {
-#     name = "gp3"
-#     annotations = {
-#       "storageclass.kubernetes.io/is-default-class" = "true"
-#     }
-#   }
-
-#   storage_provisioner = "kubernetes.io/aws-ebs"
-#   parameters = {
-#     type = "gp3"
-#   }
-
-#   reclaim_policy = "Delete"
-#   volume_binding_mode = "Immediate"
-# }
-
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   # version = "20.36.0"
 
-  cluster_name    = "artifactory"
-  # cluster_version = "1.31"
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
 
   cluster_endpoint_public_access           = true
   enable_cluster_creator_admin_permissions = true
@@ -93,24 +84,28 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_groups = {
-    one = {
-      name = "artifactory-ng-1"
+    one = merge({
+      name = "${var.cluster_name}-ng-1"
       #ami_type = "AL2_x86_64" - leave unset for latest
-      instance_types = ["t3.large"]
+      instance_types = [var.node_group_instance_type]
       capacity_type = "SPOT"
       disk_size = 50
-      # remote_access = {
-      #   ec2_ssh_key = "mozvi_key"
-      #   source_security_group_ids = [aws_security_group.cluster_remote_access.id]
-      # }
-
-      min_size     = 1
-      max_size     = 3
-      desired_size = 2
-    }
+      min_size     = var.node_group_min_size  
+      max_size     = var.node_group_max_size
+      desired_size = var.node_group_desired_size
+      tags = {
+        Name = "${var.cluster_name}-ng-1"
+      }
+    },
+    var.enable_remote_access ? {
+      remote_access = {
+          ec2_ssh_key = var.key_name
+          source_security_group_ids = [aws_security_group.cluster_remote_access.0.id]
+        }
+      } : {}
+    )
   }
 }
-
 
 # https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
 data "aws_iam_policy" "ebs_csi_policy" {
@@ -126,4 +121,9 @@ module "irsa-ebs-csi" {
   provider_url                  = module.eks.oidc_provider
   role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+
+  tags = {
+    Name = "AmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
+  }
 }
+  

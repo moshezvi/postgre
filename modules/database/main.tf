@@ -44,6 +44,13 @@ resource "aws_db_parameter_group" "pg_12_custom" {
     value = "1"
     apply_method = "pending-reboot"
   }
+
+  parameter {
+    name = "rds.force_ssl"
+    value = "1"
+    apply_method = "pending-reboot"
+  }
+
 }
 
 resource "aws_db_instance" "postgres" {

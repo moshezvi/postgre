@@ -4,7 +4,7 @@
 1. The db master user and password are provided (either through tfvars or from environment variables). They are used to create the postrges instance, and for connecting subsequently. 
 2. TF can't pass a db name - the default one created is called ```postgres```. 
 3. Connecting to the DB through a Bastion: 
-```
+~~~sh
 # connect to the bastion
 ssh -i ~/.ssh/mozvi_key.pem ubuntu@3.148.219.242
 
@@ -15,7 +15,11 @@ export PGHOST=artifactory-postgres.crco86gkgsng.us-east-2.rds.amazonaws.com
 
 # connect to the default db
 psql -h $PGHOST -U $PGUSER -d postgres
-```
+
+# if db is set to use ssh, use connstr syntax
+psql "host=$PGHOST dbname=postgres user=$PGUSER sslmode=require"  
+~~~
+
 4. Connecting to the DB with a SSH tunnel:
 ```
 # setup a SSH tunnel through the bastion
