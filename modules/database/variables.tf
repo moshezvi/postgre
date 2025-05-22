@@ -84,3 +84,17 @@ variable "apply_immediately" {  #    = true  # Applies changes without waiting f
   description = "Apply changes immediately"
   default     = false
 }
+
+# backup window cannot overlap with the maintenance window
+# backup window times are in UTC - adjust accordingly
+variable "backup_window" {
+  type        = string
+  description = "Backup window for the DB instance"
+  default     = "01:00-01:30"
+}
+
+variable "maintenance_window" {
+  type        = string
+  description = "Maintenance window for the DB instance"
+  default     = "Sun:02:00-Sun:03:00"
+}

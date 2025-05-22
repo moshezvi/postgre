@@ -1,12 +1,17 @@
 # PG documentation
+## Creating the database 
+~~~sh
+terraform apply 
+~~~
 
-## Connecting to Server
+## Connecting to a PostGreSQL database
 1. The db master user and password are provided (either through tfvars or from environment variables). They are used to create the postrges instance, and for connecting subsequently. 
 2. TF can't pass a db name - the default one created is called ```postgres```. 
+
 3. Connecting to the DB through a Bastion: 
 ~~~sh
 # connect to the bastion
-ssh -i ~/.ssh/mozvi_key.pem ubuntu@3.148.219.242
+ssh -i ~/.ssh/mozvi_key.pem ubuntu@<bastion_ip>
 
 # from bastion, run psql, using the databases endpoint
 export PGUSER=pgadmin

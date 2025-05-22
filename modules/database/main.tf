@@ -50,7 +50,10 @@ resource "aws_db_parameter_group" "pg_12_custom" {
     value = "1"
     apply_method = "pending-reboot"
   }
+}
 
+resource "aws_kms_key" "db_kms_key" {
+  description = "Encryption key for DB ${var.db_identifier}"
 }
 
 resource "aws_db_instance" "postgres" {
@@ -66,15 +69,25 @@ resource "aws_db_instance" "postgres" {
   db_subnet_group_name    = aws_db_subnet_group.pg_subnet_group.name
   vpc_security_group_ids  = [aws_security_group.postgres_sg.id]
   publicly_accessible     = var.publicly_accessible
+  
+  # configurations
   parameter_group_name    = aws_db_parameter_group.pg_12_custom.name
-  backup_retention_period = var.backup_retention_period
-  final_snapshot_identifier = "${var.db_identifier}-final-snapshot"
-  skip_final_snapshot     = var.skip_final_snapshot
   deletion_protection     = var.deletion_protection
   apply_immediately       = var.apply_immediately
   blue_green_update {
     enabled = true
   }
+
+  # encryption
+  storage_encrypted       = true
+  kms_key_id              = aws_kms_key.db_kms_key.id
+
+  # backup and retention
+  backup_retention_period = var.backup_retention_period
+  backup_window = var.backup_window
+  maintenance_window = var.maintenance_window
+  final_snapshot_identifier = "${var.db_identifier}-final-snapshot"
+  skip_final_snapshot     = var.skip_final_snapshot
 
   tags = {
     Name = var.db_identifier

@@ -12,8 +12,8 @@ locals {
 
 module database {
   source = "../../modules/database"
-  db_identifier = "pg-12-tf"
-  db_engine_version = "12.22-rds.20250220"
+  db_identifier = "artifactory-postgres"
+  db_engine_version = "12.22-rds.20250220" #"12.22-R2"  
   multi_az = true
   db_password = var.db_password
   db_username = var.db_username
@@ -24,6 +24,12 @@ module database {
   vpc_id = module.vpc.vpc_id
   allowed_cidrs = local.all_allowed_cidrs
 } 
+
+module database_dr {
+  source = "../../modules/database_dr"
+  target_region = "us-west-2"
+  db_arn = module.database.db_arn
+}
 
 # module bastion {
 #   source = "./modules/bastion"
